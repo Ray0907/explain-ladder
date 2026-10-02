@@ -2,8 +2,11 @@
 
 Audio sets the clock; the animation follows it. Never time the animation first.
 
-Working example: `examples/ste-video/` (scenes.json, index.html, video.mp4).
-Read its `index.html` before writing a new one.
+Repository example: `../examples/ste-video/` relative to the skill directory
+(scenes.json, index.html, video.mp4). Examples stay at repo root and are not
+included in skill installs. In an installed copy, use
+`<explain-ladder checkout>/examples/ste-video/` instead.
+Read its `index.html` before writing a new one when the checkout is available.
 
 ## Requirements
 
