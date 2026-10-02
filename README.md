@@ -82,7 +82,7 @@ Replace the checkout path if yours differs. The canonical installed copy is
 
 ## Credits
 
-- The ladder idea comes from [Andrej Karpathy's posts](https://x.com/karpathy).
+- The ladder idea comes from [Andrej Karpathy's post on reading LLM output](https://x.com/karpathy/status/2105819303471976479).
 - ASD-STE100 is a trademark and specification of ASD. See
   [asd-ste100.org](https://asd-ste100.org/). This project is independent of ASD.
 - Local narration uses [Kokoro ONNX](https://github.com/thewh1teagle/kokoro-onnx)

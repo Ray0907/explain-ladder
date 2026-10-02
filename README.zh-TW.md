@@ -81,7 +81,7 @@ Claude Code 與 pi 透過符號連結使用同一份技能。
 
 ## 致謝
 
-- 解說階梯的構想來自 [Andrej Karpathy 的貼文](https://x.com/karpathy)。
+- 解說階梯的構想來自 [Andrej Karpathy 談如何讀懂 LLM 輸出的貼文](https://x.com/karpathy/status/2105819303471976479)。
 - ASD-STE100 是 ASD 的商標與規範，詳見
   [asd-ste100.org](https://asd-ste100.org/)。本專案與 ASD 無隸屬關係。
 - 本機旁白使用 [Kokoro ONNX](https://github.com/thewh1teagle/kokoro-onnx)
