@@ -27,4 +27,4 @@ rules as the CLI).
 
 To update that page after editing `scripts/ste-rules.mjs`: copy `checker.html`
 and `scripts/ste-rules.mjs` into the scratchpad, then publish `checker.html` with
-`url` = the link above and `files: {"ste-rules.mjs": <copied path>}`.
+`url` = the link above and `files: {"scripts/ste-rules.mjs": <copied path>}`.
