@@ -224,7 +224,8 @@ mark.warn { background: var(--warn-soft); box-shadow: inset 0 -2px var(--warn) }
 		if (!CSS.supports('field-sizing', 'content')) {
 			el_input.style.height = 'auto'
 			const maximum = Math.max(320, window.innerHeight * 0.7)
-			el_input.style.height = `${Math.max(320, Math.min(el_input.scrollHeight, maximum))}px`
+			const height = Math.max(320, Math.min(el_input.scrollHeight, maximum))
+			el_input.style.height = `${height}px`
 		}
 		const findings = check(el_input.value)
 		groups = groupBySentence(findings)
