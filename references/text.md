@@ -13,7 +13,7 @@ Rules the checker cannot see, so apply them yourself:
 ## Loop until it passes
 
 1. Write the text to `<scratchpad>/ste.md`.
-2. Run `node ~/.claude/skills/explain/scripts/ste-check.mjs <scratchpad>/ste.md`.
+2. Run `node scripts/ste-check.mjs <scratchpad>/ste.md`.
 3. Exit 1: fix every `error` line and run again. Fix a `warn` when the fix is
    simple; a passive in descriptive text is allowed when the agent is unknown.
 4. Exit 0: put the text in the reply. Add one line: `ste-check: 0 errors`.

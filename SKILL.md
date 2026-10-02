@@ -7,6 +7,16 @@ description: Explain any topic in one or more output formats from Karpathy's lad
 
 Topic and options: $ARGUMENTS
 
+## Requirements
+
+- Node >= 22. Run `pnpm install` once in the skill directory (installs `playwright-core`).
+- Google Chrome (playwright-core drives it for screenshots and video render).
+- Format 4 only: `ffmpeg` (with `ffprobe`), and a voice: macOS `say` or
+  `ELEVENLABS_API_KEY`.
+- Claude Code tools: AskUserQuestion and Artifact. Other agents: ask the same
+  questions in plain text, and write the HTML file to the output dir instead of
+  publishing an Artifact.
+
 ## 1. Pick formats
 
 Args may start with format numbers, e.g. `/explain 1,4 how TCP handshakes work`.
@@ -28,7 +38,8 @@ Read only the reference for each chosen format, then follow it:
 | 3 | `references/web.md` | Interactive explainer page, published as an Artifact |
 | 4 | `references/video.md` | `video.mp4` with narration, verified by ffprobe |
 
-Paths are relative to this skill directory: `~/.claude/skills/explain/`.
+All paths in this skill are relative to the directory that holds this SKILL.md
+(run scripts as `node <that dir>/scripts/...`).
 Files for formats 2-4 go to `${EXPLAIN_OUT:-$HOME/Documents/explainers}/<topic-slug>/`.
 
 When several formats are chosen, write one outline first (5-7 key points, in
