@@ -11,8 +11,11 @@ Topic and options: $ARGUMENTS
 
 - Node >= 22. Run `pnpm install` once in the skill directory (installs `playwright-core`).
 - Google Chrome (playwright-core drives it for screenshots and video render).
-- Format 4 only: `ffmpeg` (with `ffprobe`), and a voice: macOS `say` or
-  `ELEVENLABS_API_KEY`.
+- Format 4: `ffmpeg` (with `ffprobe`). Voice order: ElevenLabs (if
+  `ELEVENLABS_API_KEY` is set), local Kokoro via `uv`, then macOS `say`.
+  Kokoro supports Mandarin (`zh-TW`) and English (`en`), with no global Python
+  install. First use downloads models to `${XDG_CACHE_HOME:-$HOME/.cache}/explain-kokoro/`.
+  Set `EXPLAIN_TTS=elevenlabs|kokoro|say` to force one engine (errors do not fall back).
 - Claude Code tools: AskUserQuestion and Artifact. Other agents: ask the same
   questions in plain text, and write the HTML file to the output dir instead of
   publishing an Artifact.

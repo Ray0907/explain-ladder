@@ -9,11 +9,11 @@
 // Page contract: render injects window.TIMELINE = { total, scenes: [{ id, start, duration }] }
 // (seconds) before load. All motion must be CSS animations or WAAPI with t=0 = video start;
 // render seeks every animation per frame, so the output is deterministic.
-// Voice: ElevenLabs when ELEVENLABS_API_KEY is set, macOS `say` otherwise.
+// Voice: ElevenLabs (with key) -> local Kokoro -> macOS say; EXPLAIN_TTS forces an engine.
 import { execFileSync, spawn } from 'node:child_process'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
-import { pathToFileURL } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { chromium } from 'playwright-core'
 
 const GAP_SECONDS = 0.5
@@ -47,18 +47,46 @@ function speakSay(text, path_out, lang, voice) {
 	run('say', [...(name_voice ? ['-v', name_voice] : []), '-o', path_out, text])
 }
 
+function speakKokoro(text, path_out, lang) {
+	const script = fileURLToPath(new URL('./kokoro-say.py', import.meta.url))
+	const output = run('uv', ['run', '--script', script, text, path_out, lang])
+	console.error(output.toString().trim())
+}
+
 async function voice(dir) {
 	const config = readJson(join(dir, 'scenes.json'))
 	const dir_audio = join(dir, 'audio')
 	mkdirSync(dir_audio, { recursive: true })
-	const is_eleven = Boolean(process.env.ELEVENLABS_API_KEY)
+	const forced = process.env.EXPLAIN_TTS
+	if (forced && !['elevenlabs', 'kokoro', 'say'].includes(forced)) {
+		throw new Error('EXPLAIN_TTS must be elevenlabs, kokoro, or say')
+	}
+	const engines = forced ? [forced] : [
+		...(process.env.ELEVENLABS_API_KEY ? ['elevenlabs'] : []), 'kokoro', 'say',
+	]
 	const scenes = []
 	let time_cursor = 0
 	for (const [index, scene] of config.scenes.entries()) {
-		const path_raw = join(dir_audio, `${index}-${scene.id}.${is_eleven ? 'mp3' : 'aiff'}`)
+		let path_raw
 		const path_wav = join(dir_audio, `${index}-${scene.id}.wav`)
-		if (is_eleven) await speakEleven(scene.narration, path_raw)
-		else speakSay(scene.narration, path_raw, config.lang ?? 'en', config.voice)
+		while (engines.length) {
+			const engine = engines[0]
+			const extension = { elevenlabs: 'mp3', kokoro: 'raw.wav', say: 'aiff' }[engine]
+			path_raw = join(dir_audio, `${index}-${scene.id}.${extension}`)
+			try {
+				if (engine === 'elevenlabs') {
+					if (!process.env.ELEVENLABS_API_KEY) throw new Error('Missing ELEVENLABS_API_KEY')
+					await speakEleven(scene.narration, path_raw)
+				} else if (engine === 'kokoro') {
+					speakKokoro(scene.narration, path_raw, config.lang ?? 'en')
+				} else speakSay(scene.narration, path_raw, config.lang ?? 'en', config.voice)
+				break
+			} catch (error) {
+				if (forced || engines.length === 1) throw error
+				console.error(`${engine} failed: ${error.message}; trying ${engines[1]}`)
+				engines.shift()
+			}
+		}
 		run('ffmpeg', ['-y', '-i', path_raw, '-af', `apad=pad_dur=${GAP_SECONDS}`,
 			'-ar', '44100', '-ac', '1', path_wav])
 		const duration = probeDuration(path_wav)
@@ -72,7 +100,7 @@ async function voice(dir) {
 	const timeline = { total: time_cursor, scenes }
 	writeFileSync(join(dir, 'timeline.json'), JSON.stringify(timeline, null, '\t'))
 	console.log(`voice: ${scenes.length} scenes, ${time_cursor.toFixed(1)}s`
-		+ ` (${is_eleven ? 'ElevenLabs' : 'say'}) -> timeline.json`)
+		+ ` (${engines[0]}) -> timeline.json`)
 }
 
 function startEncoder(dir) {

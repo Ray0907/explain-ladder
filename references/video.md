@@ -5,6 +5,16 @@ Audio sets the clock; the animation follows it. Never time the animation first.
 Working example: `examples/ste-video/` (scenes.json, index.html, video.mp4).
 Read its `index.html` before writing a new one.
 
+## Requirements
+
+Node >= 22, `pnpm install` in the skill directory, Google Chrome, `ffmpeg`
+(with `ffprobe`). For free local Mandarin and English narration, install `uv`.
+The runner uses isolated Python 3.12 dependencies; no global install is needed.
+First use downloads Kokoro models and voices to
+`${XDG_CACHE_HOME:-$HOME/.cache}/explain-kokoro/` (about 700 MB for both languages).
+Later runs use cached files. Direct test:
+`uv run --script scripts/kokoro-say.py 'Hello.' out.wav en`.
+
 ## Steps
 
 1. Output dir `D` = `${EXPLAIN_OUT:-$HOME/Documents/explainers}/<slug>/`.
@@ -12,8 +22,11 @@ Read its `index.html` before writing a new one.
    sentences per scene. Format is in the header of `scripts/make-video.mjs`.
 3. Voice: `node scripts/make-video.mjs voice D`
    -> `D/timeline.json` with the start and duration of each scene.
-   Uses ElevenLabs when `ELEVENLABS_API_KEY` is set (voice from
-   `ELEVENLABS_VOICE_ID`), else macOS `say` (zh: Meijia).
+   Tries ElevenLabs when `ELEVENLABS_API_KEY` is set (voice from
+   `ELEVENLABS_VOICE_ID`), then local Kokoro (`zh-TW`: zf_001; `en`: af_heart),
+   then macOS `say` (zh: Meijia). Failed engines print the error before falling back.
+   `EXPLAIN_TTS=elevenlabs|kokoro|say` forces one engine; failures then stop.
+   Kokoro also phonemizes English words inside Mandarin narration.
 4. Write `D/index.html` (1280x720 frame, 3b1b style: dark ground, one idea on
    screen, motion that shows the mechanism). Contract:
    - Read `window.TIMELINE` (injected) and set `--s` / `--d` on each scene,

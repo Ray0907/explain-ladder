@@ -1,20 +1,20 @@
 {
-	"total": 28.041723999999995,
+	"total": 22.754013999999998,
 	"scenes": [
 		{
 			"id": "problem",
 			"start": 0,
-			"duration": 9.647438
+			"duration": 7.201338
 		},
 		{
 			"id": "rewrite",
-			"start": 9.647438,
-			"duration": 9.538186
+			"start": 7.201338,
+			"duration": 7.48
 		},
 		{
 			"id": "limits",
-			"start": 19.185623999999997,
-			"duration": 8.8561
+			"start": 14.681338,
+			"duration": 8.072676
 		}
 	]
 }
