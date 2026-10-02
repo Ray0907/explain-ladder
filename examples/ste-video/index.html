@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>STE in 30 seconds</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600&display=swap">
+<style>
+/* Video frame: 16:9 blueprint sheet, one scene visible at a time. */
+:root {
+	--bg: #0f1b2a;
+	--grid: #1b2c42;
+	--fg: #e6edf5;
+	--muted: #8aa0b8;
+	--bad: #ff6b5e;
+	--good: #6fd3a0;
+	--font-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+	--font-sans: 'IBM Plex Sans', 'PingFang TC', system-ui, sans-serif;
+}
+* { box-sizing: border-box; margin: 0 }
+html, body { width: 100%; height: 100%; overflow: hidden }
+body {
+	background: var(--bg);
+	background-image: linear-gradient(var(--grid) 1px, transparent 1px),
+		linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+	background-size: 40px 40px;
+	color: var(--fg);
+	font-family: var(--font-sans);
+}
+.scene {
+	position: absolute; inset: 0;
+	display: grid; place-content: center; gap: 4vh; padding: 0 8vw;
+	animation: scene-in .5s both, scene-out .4s forwards;
+	animation-delay: calc(var(--s) * 1s), calc((var(--s) + var(--d) - .4) * 1s);
+}
+.label { font: 600 1.6vw var(--font-mono); color: var(--muted); letter-spacing: .1em }
+.sentence { font: 400 3vw/1.6 var(--font-mono) }
+.in {
+	animation: fade-up .6s both;
+	animation-delay: calc((var(--s) + var(--at, 0)) * 1s);
+}
+.bad {
+	animation: mark .4s both;
+	animation-delay: calc((var(--s) + var(--at)) * 1s);
+}
+.good { color: var(--good) }
+.count { font: 600 2.2vw var(--font-mono) }
+.bars { display: grid; gap: 4vh; width: 70vw }
+.bar { display: grid; grid-template-columns: 22vw 1fr 8vw; align-items: center; gap: 2vw }
+.bar .name { font-size: 2.2vw }
+.bar .track { height: 2.4vh; background: var(--grid) }
+.bar .fill {
+	height: 100%; width: calc(var(--v) / 30 * 100%); background: var(--fg);
+	transform-origin: left; animation: grow 1s both;
+	animation-delay: calc((var(--s) + var(--at)) * 1s);
+}
+.bar .max { font: 600 2.2vw var(--font-mono); text-align: right }
+@keyframes scene-in { from { opacity: 0 } to { opacity: 1 } }
+@keyframes scene-out { to { opacity: 0 } }
+@keyframes fade-up { from { opacity: 0; transform: translateY(2vh) } }
+@keyframes mark { to { color: var(--bad); box-shadow: inset 0 -.15em var(--bad) } }
+@keyframes grow { from { transform: scaleX(0) } }
+</style>
+</head>
+<body>
+<section class="scene" data-scene="problem">
+	<p class="label">ORIGINAL / 16 WORDS</p>
+	<p class="sentence">It is imperative that the operator
+		<span class="bad" style="--at:3.2">ensures</span> the hydraulic reservoir is
+		<span class="bad" style="--at:4.4">replenished</span>
+		<span class="bad" style="--at:5.6">prior to</span>
+		<span class="bad" style="--at:6.8">commencing</span> operation.</p>
+</section>
+<section class="scene" data-scene="rewrite">
+	<p class="label">ASD-STE100 / 13 WORDS</p>
+	<p class="sentence"><span class="good in" style="--at:1.5">Make sure</span> that the
+		hydraulic reservoir is <span class="good in" style="--at:2.3">full</span>
+		<span class="good in" style="--at:3.1">before</span> you
+		<span class="good in" style="--at:3.9">start</span> the operation.</p>
+	<p class="count in" style="--at:5.5">one word = one meaning</p>
+</section>
+<section class="scene" data-scene="limits">
+	<p class="label">WRITING RULE LIMITS</p>
+	<div class="bars">
+		<div class="bar" style="--v:20; --at:1.8"><span class="name">操作句</span>
+			<div class="track"><div class="fill"></div></div><span class="max">20</span></div>
+		<div class="bar" style="--v:25; --at:3.6"><span class="name">描述句</span>
+			<div class="track"><div class="fill"></div></div><span class="max">25</span></div>
+		<div class="bar" style="--v:6; --at:5.8"><span class="name">每段句數</span>
+			<div class="track"><div class="fill"></div></div><span class="max">6</span></div>
+	</div>
+</section>
+<script>
+	// Fallback timeline lets the page play in a normal browser tab.
+	const timeline = window.TIMELINE ?? { scenes: [
+		{ id: 'problem', start: 0, duration: 9.6 },
+		{ id: 'rewrite', start: 9.6, duration: 9.5 },
+		{ id: 'limits', start: 19.1, duration: 8.9 },
+	] }
+	const index_last = timeline.scenes.length - 1
+	timeline.scenes.forEach(({ id, start, duration }, index) => {
+		const section = document.querySelector(`[data-scene="${id}"]`)
+		section.style.setProperty('--s', start)
+		// Last scene never fades out.
+		section.style.setProperty('--d', index === index_last ? 1e6 : duration)
+	})
+</script>
+</body>
+</html>

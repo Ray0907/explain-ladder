@@ -1,0 +1,256 @@
+<title>STE Checker</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600&display=swap">
+<style>
+/* Layout: drawing-sheet frame; text input left (sticky), findings grouped by sentence right. */
+:root {
+	--bg: #f3f5f2;
+	--sheet: #ffffff;
+	--ink: #1d2a33;
+	--muted: #5d6b74;
+	--line: #c9d1cc;
+	--control: #7d8a83;
+	--accent: #1f5f8b;
+	--error: #b3261e;
+	--error-soft: #fbe9e7;
+	--warn: #8a5a00;
+	--warn-soft: #fbf1dc;
+	--ok: #1e6b45;
+	--font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+	--font-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme="light"]) {
+		--bg: #10161b; --sheet: #172028; --ink: #dde6ec; --muted: #8c9aa4;
+		--line: #2c3a45; --control: #62737f; --accent: #7db7e0;
+		--error: #ff8a80; --error-soft: #3a2224; --warn: #f0c060; --warn-soft: #362d1a;
+		--ok: #7fd1a3; color-scheme: dark;
+	}
+}
+:root[data-theme="dark"] {
+	--bg: #10161b; --sheet: #172028; --ink: #dde6ec; --muted: #8c9aa4;
+	--line: #2c3a45; --control: #62737f; --accent: #7db7e0;
+	--error: #ff8a80; --error-soft: #3a2224; --warn: #f0c060; --warn-soft: #362d1a;
+	--ok: #7fd1a3; color-scheme: dark;
+}
+* { box-sizing: border-box }
+body {
+	background: var(--bg); color: var(--ink); font-family: var(--font-sans);
+	-webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+	padding-inline: 16px; padding-block: 24px 40px;
+}
+.sheet { max-width: 1180px; margin: 0 auto; background: var(--sheet); border: 1px solid var(--line) }
+header {
+	display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: baseline;
+	justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--line);
+}
+h1 { font-size: 1.25rem; margin: 0; text-wrap: balance }
+.caps { font: 0.75rem var(--font-mono); color: var(--muted); letter-spacing: .06em; text-transform: uppercase }
+.work { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) }
+.panel { padding: 16px 20px; display: grid; gap: 12px; align-content: start; min-width: 0 }
+.panel + .panel { border-inline-start: 1px solid var(--line) }
+.tag { font-weight: 600; display: flex; gap: 8px; align-items: center }
+.tag b { background: var(--ink); color: var(--sheet); padding: 1px 6px; letter-spacing: 0 }
+textarea {
+	width: 100%; min-height: 320px; max-height: 70vh; field-sizing: content; resize: vertical;
+	padding: 12px; font: 1rem/1.6 var(--font-mono); color: var(--ink); background: var(--bg);
+	border: 1px solid var(--control);
+}
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.actions { display: flex; gap: 12px; flex-wrap: wrap }
+button.action {
+	font: 0.875rem var(--font-sans); min-height: 2.5rem; padding: 0 14px; cursor: pointer;
+	color: var(--ink); background: transparent; border: 1px solid var(--control);
+	transition-property: color, border-color; transition-duration: .15s;
+}
+button.action:hover { border-color: var(--accent); color: var(--accent) }
+#summary { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-height: 1.75rem }
+.pill { font: 600 0.85rem var(--font-mono); padding: 3px 10px; border: 1px solid currentColor }
+.pill.error { color: var(--error) } .pill.warn { color: var(--warn) } .pill.ok { color: var(--ok) }
+.hint { margin: 0; color: var(--muted); text-wrap: pretty }
+ol, ul { list-style: none; padding: 0; margin: 0 }
+#findings { display: grid; gap: 16px }
+.card { border-inline-start: 3px solid var(--warn); display: grid; gap: 6px; min-width: 0 }
+.card.error { border-color: var(--error) }
+.jump {
+	all: unset; cursor: pointer; display: grid; gap: 4px; padding: 6px 10px;
+	font: 0.95rem/1.6 var(--font-mono); overflow-wrap: anywhere;
+}
+.jump:hover .text { text-decoration: underline dotted var(--muted); text-underline-offset: 4px }
+.jump:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px }
+mark { color: inherit; padding: 0 2px }
+mark.error { background: var(--error-soft); box-shadow: inset 0 -2px var(--error) }
+mark.warn { background: var(--warn-soft); box-shadow: inset 0 -2px var(--warn) }
+.issues { display: grid; gap: 4px; padding-inline: 10px; padding-block-end: 6px }
+.issue { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr); gap: 8px; align-items: baseline }
+.issue .sev { font: 600 0.75rem var(--font-mono); text-transform: uppercase; letter-spacing: .06em }
+.issue.error .sev { color: var(--error) } .issue.warn .sev { color: var(--warn) }
+.limits {
+	display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	border-top: 1px solid var(--line);
+}
+.limits div { padding: 12px 20px; display: grid; gap: 2px }
+.limits div + div { border-inline-start: 1px solid var(--line) }
+.limits strong { font: 600 1.1rem var(--font-mono); font-variant-numeric: tabular-nums }
+.scope { margin: 0; padding: 12px 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.875rem }
+@media (min-width: 761px) {
+	.panel:first-child { position: sticky; top: env(safe-area-inset-top, 0px); align-self: start }
+}
+@media (max-width: 760px) {
+	.work { grid-template-columns: 1fr }
+	.panel + .panel { border-inline-start: 0; border-top: 1px solid var(--line) }
+	.limits div + div { border-inline-start: 0 }
+}
+</style>
+
+<main class="sheet">
+	<header>
+		<h1>STE Checker</h1>
+		<span class="caps">ASD-STE100&nbsp;&middot;&nbsp;machine-checkable subset</span>
+	</header>
+	<div class="work">
+		<section class="panel" aria-labelledby="label-text">
+			<label class="tag caps" id="label-text" for="input"><b>A</b> Text</label>
+			<textarea id="input" spellcheck="false"></textarea>
+			<div class="actions">
+				<button type="button" class="action" id="sample">Load sample</button>
+				<button type="button" class="action" id="clear">Clear text</button>
+			</div>
+		</section>
+		<section class="panel" aria-labelledby="label-findings">
+			<h2 class="tag caps" id="label-findings" style="margin:0"><b>B</b> Findings</h2>
+			<div id="summary" role="status"></div>
+			<ol id="findings"></ol>
+		</section>
+	</div>
+	<div class="limits" id="limits"></div>
+	<p class="scope">Not checked: noun clusters (max 3 words), one meaning per word, one topic per paragraph. Review these by hand.</p>
+</main>
+
+<script type="module">
+	import { check, LIMITS } from './ste-rules.mjs'
+
+	const SAMPLE = [
+		'It is imperative that the operator ensures the hydraulic reservoir is replenished prior to commencing operation.',
+		'',
+		'Make sure that the hydraulic reservoir is full before you start the operation.',
+		'',
+		'1. Open the valve and remove the cap.',
+		'2. Wait for about 10 minutes.',
+		'',
+		'The pump is being utilized in order to supply fuel to the engine.',
+	].join('\n')
+	const el_input = document.getElementById('input')
+	const el_findings = document.getElementById('findings')
+	const el_summary = document.getElementById('summary')
+
+	document.getElementById('limits').innerHTML = [
+		['Procedure sentence', `${LIMITS.procedure} words`],
+		['Descriptive sentence', `${LIMITS.descriptive} words`],
+		['Paragraph', `${LIMITS.paragraph} sentences`],
+		['Instructions per sentence', '1'],
+	].map(([name, value]) => `<div><span class="caps">${name}</span><strong>${value}</strong></div>`).join('')
+
+	const escapeHtml = (text) => text.replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`)
+	const escapeRegex = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+	const plural = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`
+
+	// One card per sentence: findings share line + excerpt.
+	function groupBySentence(findings) {
+		const groups = new Map()
+		for (const f of findings) {
+			const key = `${f.line}\n${f.excerpt}`
+			if (!groups.has(key)) groups.set(key, { line: f.line, excerpt: f.excerpt, items: [] })
+			groups.get(key).items.push(f)
+		}
+		return [...groups.values()]
+	}
+
+	// Mark matched phrases on the raw text. Errors first, then longest, so an
+	// unapproved word wins over an overlapping passive phrase; overlaps are dropped.
+	function highlight(group) {
+		const text = group.excerpt
+		const rank = (f) => (f.severity === 'error' ? 0 : 1)
+		const ranges = []
+		group.items.filter((f) => f.match)
+			.sort((a, b) => rank(a) - rank(b) || b.match.length - a.match.length)
+			.forEach((f) => {
+				const start = text.indexOf(f.match)
+				const end = start + f.match.length
+				const is_overlap = ranges.some((r) => start < r.end && r.start < end)
+				if (start >= 0 && !is_overlap) ranges.push({ start, end, severity: f.severity })
+			})
+		ranges.sort((a, b) => a.start - b.start)
+		let html = ''
+		let cursor = 0
+		for (const r of ranges) {
+			html += escapeHtml(text.slice(cursor, r.start))
+				+ `<mark class="${r.severity}">${escapeHtml(text.slice(r.start, r.end))}</mark>`
+			cursor = r.end
+		}
+		return html + escapeHtml(text.slice(cursor))
+	}
+
+	function renderCard(group, index) {
+		const is_error = group.items.some((f) => f.severity === 'error')
+		const issues = group.items.map((f) => `
+			<li class="issue ${f.severity}"><span class="sev">${f.severity === 'warn' ? 'Warning' : 'Error'}</span>
+				<span>${escapeHtml(f.message)}</span></li>`).join('')
+		return `<li class="card ${is_error ? 'error' : 'warn'}">
+			<button type="button" class="jump" data-index="${index}"
+				aria-label="Line ${group.line}: select this sentence in the text">
+				<span class="caps">Line ${group.line}</span>
+				<span class="text">${highlight(group)}</span>
+			</button>
+			<ul class="issues">${issues}</ul>
+		</li>`
+	}
+
+	function renderSummary(findings, count_sentence) {
+		if (!el_input.value.trim()) {
+			return '<p class="hint">Paste English text into box A to check it.</p>'
+		}
+		if (!findings.length) {
+			return '<span class="pill ok">No rule violations</span>'
+				+ '<p class="hint">The text passes every rule this tool checks.</p>'
+		}
+		const count_error = findings.filter((f) => f.severity === 'error').length
+		return `<span class="pill error">${plural(count_error, 'error')}</span>`
+			+ `<span class="pill warn">${plural(findings.length - count_error, 'warning')}</span>`
+			+ `<span class="hint">in ${plural(count_sentence, 'sentence')}</span>`
+	}
+
+	let groups = []
+	function render() {
+		const findings = check(el_input.value)
+		groups = groupBySentence(findings)
+		el_summary.innerHTML = renderSummary(findings, groups.length)
+		el_findings.innerHTML = groups.map(renderCard).join('')
+		try { localStorage.setItem('ste-draft', el_input.value) } catch {}
+	}
+
+	// Select the sentence in the textarea; excerpts join lines with one space.
+	el_findings.addEventListener('click', (event) => {
+		const button = event.target.closest('.jump')
+		if (!button) return
+		const { excerpt } = groups[Number(button.dataset.index)]
+		const pattern = new RegExp(excerpt.split(/\s+/).map(escapeRegex).join('\\s+'))
+		const hit = pattern.exec(el_input.value)
+		el_input.focus()
+		if (hit) el_input.setSelectionRange(hit.index, hit.index + hit[0].length)
+	})
+
+	let draft = null
+	try { draft = localStorage.getItem('ste-draft') } catch {}
+	el_input.value = draft || SAMPLE
+	el_input.addEventListener('input', render)
+	document.getElementById('sample').addEventListener('click', () => {
+		el_input.value = SAMPLE
+		render()
+	})
+	document.getElementById('clear').addEventListener('click', () => {
+		el_input.value = ''
+		render()
+		el_input.focus()
+	})
+	render()
+</script>

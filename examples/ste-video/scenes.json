@@ -1,0 +1,8 @@
+{
+	"lang": "zh-TW",
+	"scenes": [
+		{ "id": "problem", "narration": "這句話有十六個字，但有四個字是 STE 不允許的：ensure、replenish、prior to、commencing。" },
+		{ "id": "rewrite", "narration": "換成核准字：make sure、full、before、start。句子變成十三個字，每個字只有一個意思。" },
+		{ "id": "limits", "narration": "STE 用硬性上限控制長度：操作句最多二十字，描述句最多二十五字，每段最多六句。" }
+	]
+}
